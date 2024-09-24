@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Timekeeper Event</title>
+    <style>
+        /* Gaya dasar */
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            /* Warna latar belakang gelap */
+            color: #FFFFFF;
+            /* Warna teks putih */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* Heading utama */
+        
+        h1 {
+            text-align: center;
+            padding: 20px;
+            background-color: #ff7300;
+            /* Warna kuning keoranyean */
+            color: #121212;
+            /* Warna teks gelap */
+            width: 100%;
+            margin: 0;
+        }
+        /* Container untuk timer utama */
+        
+        .main-timer {
+            font-size: 20em;
+            font-weight: bold;
+            color: #ff7300;
+            /* Warna kuning keoranyean */
+        }
+        /* Tombol pause/play dan input catatan */
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .notes {
+            margin-top: 10px;
+            width: 300px;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ff7300;
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            font-weight: 600;
+            /* Warna kuning keoranyean */
+            background-color: #333333;
+            /* Warna latar belakang gelap untuk area catatan */
+            color: #FFFFFF;
+            /* Warna teks putih */
+            border-radius: 5px;
+            font-size: 6em;
+            text-align: center;
+        }
+        /* Container untuk acara */
+        
+        #events {
+            max-width: 600px;
+            width: 100%;
+            margin: 20px;
+            padding: 20px;
+            background-color: #333333;
+            /* Warna latar belakang gelap untuk kartu acara */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        /* Setiap acara */
+        
+        .event {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #444444;
+            /* Warna batas yang sedikit lebih terang */
+            border-radius: 5px;
+            background-color: #2C2C2C;
+            /* Warna latar belakang yang lebih gelap */
+        }
+        
+        .event h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #ff7300;
+            /* Warna kuning keoranyean */
+        }
+        /* Timer */
+        
+        .timer {
+            font-size: 1.5em;
+            margin: 10px 0;
+            color: #ff7300;
+            /* Warna kuning keoranyean */
+        }
+        /* Tombol */
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 1em;
+            color: #121212;
+            /* Warna teks gelap */
+            background-color: #ff7300;
+            /* Warna kuning keoranyean */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #ff7300;
+            /* Warna hover yang sedikit lebih gelap */
+        }
+        /* Tombol tambah acara */
+        
+        .add-event {
+            display: block;
+            width: 100%;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 1.2em;
+            background-color: #ff7300;
+            /* Warna kuning keoranyean */
+        }
+        
+        .add-event:hover {
+            background-color: #703d13;
+            /* Warna hover yang sedikit lebih gelap */
+        }
+    </style>
+</head>
+
+<body>
+    <h1>PKKMB & SA 2024</h1>
+
+    <!-- Timer utama yang menonjol -->
+    <div class="main-timer" id="main-timer">00:00</div>
+
+    <!-- Kontrol pause/play dan catatan -->
+    <div class="controls">
+        <button id="pause-play-button" onclick="toggleTimer()">Pause</button>
+        <textarea class="notes" id="notes" placeholder="Tulis catatan di sini..."></textarea>
+    </div>
+
+    <div id="events">
+        <!-- Tempat untuk menampilkan acara -->
+    </div>
+
+    <button class="add-event" onclick="addEvent()">Tambah Acara</button>
+
+    <script>
+        let events = [];
+        let currentEventIndex = 0;
+        let timerInterval;
+        let isPaused = false;
+
+        function addEvent() {
+            const eventName = prompt("Masukkan nama mata acara:");
+            const eventDuration = parseInt(prompt("Masukkan durasi acara (dalam menit):"));
+
+            if (eventName && eventDuration) {
+                events.push({
+                    name: eventName,
+                    duration: eventDuration * 60,
+                    remaining: eventDuration * 60
+                });
+                renderEvents();
+            }
+        }
+
+        function renderEvents() {
+            const eventsContainer = document.getElementById('events');
+            eventsContainer.innerHTML = '';
+
+            events.forEach((event, index) => {
+                const eventDiv = document.createElement('div');
+                eventDiv.classList.add('event');
+                eventDiv.innerHTML = `
+                    <h2>${event.name}</h2>
+                    <div class="timer" id="timer-${index}">${formatTime(event.remaining)}</div>
+                    <button onclick="startTimer(${index})">Mulai</button>
+                    <button onclick="addTime(${index}, 300)">Tambah 5 Menit</button>
+                `;
+                eventsContainer.appendChild(eventDiv);
+            });
+        }
+
+        function startTimer(index) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+
+            currentEventIndex = index;
+            isPaused = false;
+            document.getElementById('pause-play-button').innerText = "Pause";
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    const currentEvent = events[currentEventIndex];
+
+                    if (currentEvent.remaining > 0) {
+                        currentEvent.remaining--;
+                        document.getElementById(`timer-${currentEventIndex}`).innerText = formatTime(currentEvent.remaining);
+                        document.getElementById('main-timer').innerText = formatTime(currentEvent.remaining);
+                    } else {
+                        clearInterval(timerInterval);
+                        if (currentEventIndex < events.length - 1) {
+                            startTimer(currentEventIndex + 1);
+                        } else {
+                            document.getElementById('main-timer').innerText = "ITS A WRAPPP";
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        function toggleTimer() {
+            isPaused = !isPaused;
+            document.getElementById('pause-play-button').innerText = isPaused ? "Play" : "Pause";
+        }
+
+        function addTime(index, seconds) {
+            events[index].remaining += seconds;
+            renderEvents();
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
+    </script>
+</body>
+
+</html>
